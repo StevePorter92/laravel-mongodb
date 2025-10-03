@@ -445,6 +445,21 @@ class ModelTest extends TestCase
         $this->assertEquals(2, Soft::count());
     }
 
+    public function testMorphToSoftDelete(): void
+    {
+        $user1 = User::create(['name' => 'John Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
+        $soft = Soft::create(['name' => 'Soft 1']);
+        $user1->morphToSoftWithTrashed()->associate($soft);
+
+        $soft->delete();
+
+        $morphSoft = User::with('morphToSoftWithTrashed')->first();
+
+        $this->assertInstanceOf(Soft::class, $morphSoft->morphToSoftWithTrashed);
+        $this->assertTrue($morphSoft->trashed());
+        $this->assertEquals($morphSoft->getKey(), $soft->getKey());
+    }
+
     /** @param class-string<Model> $model */
     #[DataProvider('provideId')]
     public function testPrimaryKey(string $model, mixed $id, mixed $expected, bool $expectedFound): void
