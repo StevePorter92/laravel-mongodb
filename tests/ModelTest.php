@@ -5,7 +5,18 @@ declare(strict_types=1);
 namespace MongoDB\Laravel\Tests;
 
 use Carbon\Carbon;
+use const DATE_ATOM;
 use DateTime;
+use function abs;
+use function array_keys;
+use function array_merge;
+use function date_default_timezone_set;
+use function get_debug_type;
+use function hex2bin;
+use function sleep;
+use function sort;
+use function strlen;
+use function time;
 use Generator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -19,6 +30,7 @@ use MongoDB\Laravel\Collection;
 use MongoDB\Laravel\Connection;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Tests\Models\Book;
+
 use MongoDB\Laravel\Tests\Models\Guarded;
 use MongoDB\Laravel\Tests\Models\IdIsBinaryUuid;
 use MongoDB\Laravel\Tests\Models\IdIsInt;
@@ -29,20 +41,8 @@ use MongoDB\Laravel\Tests\Models\Soft;
 use MongoDB\Laravel\Tests\Models\SqlUser;
 use MongoDB\Laravel\Tests\Models\User;
 use PHPUnit\Framework\Attributes\DataProvider;
+
 use PHPUnit\Framework\Attributes\TestWith;
-
-use function abs;
-use function array_keys;
-use function array_merge;
-use function date_default_timezone_set;
-use function get_debug_type;
-use function hex2bin;
-use function sleep;
-use function sort;
-use function strlen;
-use function time;
-
-use const DATE_ATOM;
 
 class ModelTest extends TestCase
 {
@@ -402,6 +402,21 @@ class ModelTest extends TestCase
 
         $object->restore();
         $this->assertEquals(2, Soft::count());
+    }
+
+    public function testMorphToSoftDelete(): void
+    {
+        $user1 = User::create(['name' => 'John Doe', 'note1' => 'ABC', 'note2' => 'DEF']);
+
+        $soft = $user1->softs()->create(['name' => 'Soft 1']);
+
+        $soft->delete();
+
+        $morphSoft = User::with('morphSoftWithTrashed')->first();
+
+        $this->assertInstanceOf(Soft::class, $morphSoft->morphSoftWithTrashed);
+        $this->assertTrue($morphSoft->trashed());
+        $this->assertEquals($morphSoft->getKey(), $soft->getKey());
     }
 
     #[DataProvider('provideId')]

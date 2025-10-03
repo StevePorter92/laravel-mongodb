@@ -73,6 +73,11 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         return $this->hasMany(Soft::class)->withTrashed();
     }
 
+    public function morphSoftWithTrashed()
+    {
+        return $this->morphTo(Soft::class)->withTrashed();
+    }
+
     public function sqlBooks()
     {
         return $this->hasMany(SqlBook::class, 'author_id');
